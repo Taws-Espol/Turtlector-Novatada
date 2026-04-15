@@ -16,9 +16,12 @@
         pname = "dev-env";
         version = "v1.0.0";
         buildInputs = [
-          pkgs.nodejs-slim_20
-          pkgs.pnpm
+          pkgs.nodejs_20
+          pkgs.portaudio
         ];
+        shellHook = ''
+          export LD_LIBRARY_PATH=${pkgs.portaudio}/lib:$LD_LIBRARY_PATH
+        '';
       };
     };
 }
