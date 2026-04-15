@@ -217,4 +217,4 @@ __marimo__/
 !package-lock.json
 !tsconfig.json
 
-*.python-version
+.direnv
