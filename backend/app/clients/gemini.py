@@ -11,7 +11,7 @@ client = genai.Client(api_key=settings.settings.gemini_api_key)
 
 class ChatClient:
     def create_chat(self):
-        return client.chats.create(model="gemini-2.5-flash")
+        return client.chats.create(model="gemma-4-31b-it")
 
     def send_message(self, chat, message):
         try:
