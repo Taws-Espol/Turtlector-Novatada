@@ -76,11 +76,12 @@ export function useChatFlow(speak: (text: string, onEnd?: () => void) => void) {
 
   const chatState = useMemo(
     () => ({
+      conversationId,
       messages,
       requestStatus,
       isSpeaking,
     }),
-    [isSpeaking, messages, requestStatus],
+    [conversationId, isSpeaking, messages, requestStatus],
   )
 
   return { submitUserMessage, chatState }

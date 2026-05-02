@@ -69,7 +69,12 @@ function App() {
           <div className="logo-ring">
             <div className="logo-dot" />
           </div>
-          <h1 className="app-title">Turtlector</h1>
+          <div>
+            <h1 className="app-title">Turtlector</h1>
+            <p className="conversation-id">
+              Conversation ID: {chatState.conversationId || 'not started'}
+            </p>
+          </div>
         </div>
 
         <a
