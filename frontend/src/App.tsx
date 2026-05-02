@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { MouseEvent } from 'react'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import Scene3D from './components/Scene3D'
 import './App.css'
@@ -20,31 +21,85 @@ function App() {
 
   const [conversationId, setConversationId] = useState('')
   const [messages, setMessages] = useState<Msg[]>([])
-  const [titlePulse, setTitlePulse] = useState(false)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoiceName, setSelectedVoiceName] = useState('')
+  const [hasUserVoiceSelection, setHasUserVoiceSelection] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+  const hasSpeechSynthesisSupport =
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    'SpeechSynthesisUtterance' in window
 
-  // efecto: pulso al click del título
-  const pulse = () => {
-    setTitlePulse(true)
-    setTimeout(() => setTitlePulse(false), 700)
-  }
+  useEffect(() => {
+    if (!hasSpeechSynthesisSupport) return
 
-  // autoscroll al final cuando haya nuevos mensajes
+    const synth = window.speechSynthesis
+
+    const chooseVoice = (allVoices: SpeechSynthesisVoice[]) => {
+      if (allVoices.length === 0) return ''
+
+      if (hasUserVoiceSelection) {
+        const stillExists = allVoices.some(v => v.name === selectedVoiceName)
+        if (stillExists) return selectedVoiceName
+      }
+
+      const spanishVoice = allVoices.find(v => v.lang.toLowerCase().startsWith('es'))
+      if (spanishVoice) return spanishVoice.name
+
+      return allVoices[0].name
+    }
+
+    const populateVoices = () => {
+      const allVoices = synth.getVoices()
+      setVoices(allVoices)
+      const nextVoiceName = chooseVoice(allVoices)
+      if (nextVoiceName) {
+        setSelectedVoiceName(nextVoiceName)
+      }
+    }
+
+    populateVoices()
+    synth.onvoiceschanged = populateVoices
+
+    return () => {
+      synth.onvoiceschanged = null
+      synth.cancel()
+    }
+  }, [hasSpeechSynthesisSupport, hasUserVoiceSelection, selectedVoiceName])
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages.length])
+  }, [messages])
 
-  // si el navegador no soporta STT
-  if (!browserSupportsSpeechRecognition) {
-    return <span>Lo sentimos, tu navegador no soporta el reconocimiento de voz.</span>
+  const speakText = (text: string) => {
+    if (!hasSpeechSynthesisSupport) return
+
+    const normalized = text.trim()
+    if (!normalized || normalized === '…') return
+
+    const synth = window.speechSynthesis
+    const utterance = new window.SpeechSynthesisUtterance(normalized)
+    const selectedVoice = voices.find(v => v.name === selectedVoiceName)
+
+    if (selectedVoice) {
+      utterance.voice = selectedVoice
+    }
+
+    utterance.rate = 1
+    utterance.pitch = 1
+
+    synth.cancel()
+    synth.speak(utterance)
   }
 
-  const handleMicrophoneClick = async () => {
+  const handleMicrophoneClick = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+
     if (listening) {
-      // detener escucha y enviar lo capturado
       SpeechRecognition.stopListening()
+
       const text = transcript.trim()
       if (!text) return
 
@@ -57,7 +112,14 @@ function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: text, conversation_id: conversationId })
         })
+
+        if (!res.ok) {
+          throw new Error(`Request failed with status ${res.status}`)
+        }
+
         const data = await res.json()
+
+        setConversationId(data.conversation_id)
 
         const botMsg: Msg = {
           id: crypto.randomUUID(),
@@ -65,14 +127,10 @@ function App() {
           text: data.response ?? '…',
           ts: Date.now()
         }
+
         setMessages(prev => [...prev, botMsg])
-
-        if (data.is_complete) setConversationId('')
-        else setConversationId(data.conversation_id)
-
-        if (data.audiob64) {
-          const audio = new Audio(`data:audio/mp3;base64,${data.audiob64}`)
-          audio.play().catch(() => {})
+        if (typeof data.response === 'string') {
+          speakText(data.response)
         }
       } catch (e) {
         const errMsg: Msg = {
@@ -82,15 +140,16 @@ function App() {
           ts: Date.now()
         }
         setMessages(prev => [...prev, errMsg])
-        console.error(e)
-      } finally {
-        resetTranscript()
       }
-    } else {
-      // empezar a escuchar
+
       resetTranscript()
+    } else {
       SpeechRecognition.startListening({ continuous: true, language: 'es-ES' })
     }
+  }
+
+  if (!browserSupportsSpeechRecognition || !hasSpeechSynthesisSupport) {
+    return <span>Lo sentimos, tu navegador no soporta el reconocimiento de voz.</span>
   }
 
   return (
@@ -100,7 +159,7 @@ function App() {
       <header className="header">
         <div className="brand">
           <div className="logo-ring"><div className="logo-dot" /></div>
-          <h1 className={`app-title ${titlePulse ? 'active' : ''}`} onClick={pulse}>Turtlector</h1>
+          <h1 className="app-title">Turtlector</h1>
         </div>
 
         <a
@@ -112,7 +171,7 @@ function App() {
         >
           <div className="pill-logo">
             <img src="/taws.svg" width={30} height={30} alt="TAWS"
-              onError={(e)=>{ (e.target as HTMLImageElement).src='/vite.svg' }} />
+              onError={(e) => { (e.target as HTMLImageElement).src = '/vite.svg' }} />
           </div>
           <div className="pill-line">BE DIFFERENT&nbsp;&nbsp;BE TAWS</div>
           <span className="pill-dot" />
@@ -130,6 +189,26 @@ function App() {
 
           {/* derecha: chat */}
           <section className="chat-panel">
+            <div className="voice-selector-row">
+              <label className="voice-selector-label" htmlFor="voiceSelect">Voz de la tortuga</label>
+              <select
+                id="voiceSelect"
+                className="voice-selector"
+                value={selectedVoiceName}
+                onChange={(e) => {
+                  setSelectedVoiceName(e.target.value)
+                  setHasUserVoiceSelection(true)
+                }}
+                disabled={voices.length === 0}
+              >
+                {voices.map((voice) => (
+                  <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
+                    {voice.name} ({voice.lang})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="chat-header">
               <span className="chat-title">Chat</span>
               <span className={`chat-dot ${listening ? 'on' : ''}`} />

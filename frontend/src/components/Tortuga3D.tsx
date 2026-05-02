@@ -42,15 +42,6 @@ const Tortuga3D: React.FC<Tortuga3DProps> = ({ animationState = 'standby' }) => 
   const { actions } = useAnimations(currentAnimations, groupRef)
 
   useEffect(() => {
-    if (currentScene) {
-      console.log(`[Tortuga3D] Modelo ${animationState} cargado`, currentScene)
-      console.log('[Tortuga3D] Animaciones disponibles:', currentAnimations.map(anim => anim.name))
-    } else {
-      console.error(`[Tortuga3D] Error al cargar el modelo ${animationState}`)
-    }
-  }, [animationState, currentScene, currentAnimations])
-
-  useEffect(() => {
     if (!actions || Object.keys(actions).length === 0) return
 
     Object.values(actions).forEach(action => action?.stop())
