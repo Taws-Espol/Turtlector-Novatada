@@ -1,4 +1,9 @@
-[phases.build]
+providers = []
+
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20"]
+
+[phases.install]
 cmds = ["./scripts/coolify_build.sh"]
 
 [start]
