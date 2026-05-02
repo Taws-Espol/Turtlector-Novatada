@@ -6,9 +6,11 @@ import { Group, LoopRepeat } from 'three'
 import type { TurtleAnimationState } from '../domain/types'
 import { TURTLE_ACTION_NAMES_BY_STATE } from '../domain/animations'
 import { TURTLE_MODEL_BY_STATE } from '../domain/models'
+import { xrModes, type XRMode } from '../domain/xr'
 
 type Props = {
   animationState: TurtleAnimationState
+  xrMode: XRMode
 }
 
 const PRELOAD_MODELS = Array.from(new Set(Object.values(TURTLE_MODEL_BY_STATE)))
@@ -17,7 +19,22 @@ for (const modelUrl of PRELOAD_MODELS) {
   useGLTF.preload(modelUrl)
 }
 
-export default function Tortuga3D({ animationState }: Props) {
+const TURTLE_LAYOUT_BY_MODE: Record<XRMode, { position: [number, number, number]; scale: [number, number, number] }> = {
+  [xrModes.desktop]: {
+    position: [0, -2, 0],
+    scale: [1.5, 1.5, 1.5],
+  },
+  [xrModes.vr]: {
+    position: [0, -1.35, -2.1],
+    scale: [0.95, 0.95, 0.95],
+  },
+  [xrModes.ar]: {
+    position: [0, -1.1, -1.3],
+    scale: [0.8, 0.8, 0.8],
+  },
+}
+
+export default function Tortuga3D({ animationState, xrMode }: Props) {
   const groupRef = useRef<Group>(null)
 
   const standby = useGLTF(TURTLE_MODEL_BY_STATE.standby)
@@ -44,7 +61,7 @@ export default function Tortuga3D({ animationState }: Props) {
 
   const currentScene = sceneByState[animationState]
   const currentAnimations = animationsByState[animationState]
-  const { actions } = useAnimations(currentAnimations, groupRef)
+  const { actions } = useAnimations(currentAnimations, groupRef as never)
 
   const resolveTargetAction = () => {
     if (!actions || Object.keys(actions).length === 0) return null
@@ -79,11 +96,13 @@ export default function Tortuga3D({ animationState }: Props) {
     }
   })
 
+  const layout = TURTLE_LAYOUT_BY_MODE[xrMode]
+
   return (
     <group
       ref={groupRef}
-      position={[0, -2, 0]}
-      scale={[1.5, 1.5, 1.5]}
+      position={layout.position}
+      scale={layout.scale}
       rotation={[0, -Math.PI / 2, 0]}
     >
       <primitive object={currentScene} />

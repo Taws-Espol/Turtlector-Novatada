@@ -5,6 +5,8 @@ import ChatPanel from './features/chat/components/ChatPanel'
 import { useChatFlow } from './features/chat/hooks/useChatFlow'
 import Scene3D from './features/turtle/components/Scene3D'
 import { turtleAnimationStates } from './features/turtle/domain/types'
+import { xrModes } from './features/turtle/domain/xr'
+import { useXRSession } from './features/turtle/hooks/useXRSession'
 import { useMicrophone } from './features/voice/hooks/useMicrophone'
 import { useSpeechSynthesis } from './features/voice/hooks/useSpeechSynthesis'
 import './App.css'
@@ -23,6 +25,7 @@ function App() {
     useSpeechSynthesis()
 
   const { submitUserMessage, chatState } = useChatFlow(speak)
+  const { xrMode, xrStore, support, status, error, enterVR, enterAR, exitXR } = useXRSession()
 
   const turtleAnimationState = useMemo(() => {
     if (listening || chatState.requestStatus === 'loading') {
@@ -100,11 +103,48 @@ function App() {
         </a>
       </header>
 
+      <div className="xr-toolbar">
+        <div className="xr-actions">
+          <button
+            className="xr-btn"
+            onClick={() => {
+              void enterVR()
+            }}
+            disabled={!support.vrSupported || status === 'starting' || status === 'ending'}
+          >
+            Enter VR
+          </button>
+          <button
+            className="xr-btn"
+            onClick={() => {
+              void enterAR()
+            }}
+            disabled={!support.arSupported || status === 'starting' || status === 'ending'}
+          >
+            Enter AR
+          </button>
+          <button
+            className="xr-btn xr-btn-secondary"
+            onClick={() => {
+              void exitXR()
+            }}
+            disabled={xrMode === xrModes.desktop || status === 'starting' || status === 'ending'}
+          >
+            Exit XR
+          </button>
+        </div>
+        <p className="xr-status">
+          XR Mode: {xrMode.toUpperCase()} | Status: {status}
+          {!support.secureContext ? ' | Requires HTTPS or localhost' : ''}
+          {error ? ` | ${error}` : ''}
+        </p>
+      </div>
+
       <main className="main-content">
         <div className="layout-chat">
           <aside className="left-col">
             <div className="tortuga-3d-container">
-              <Scene3D animationState={turtleAnimationState} />
+              <Scene3D animationState={turtleAnimationState} xrMode={xrMode} xrStore={xrStore} />
             </div>
           </aside>
 

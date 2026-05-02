@@ -7,7 +7,7 @@ const NETWORK_ERROR_MESSAGE = '¡Ups! Hubo un error al comunicarse con la tortug
 
 type RequestStatus = 'idle' | 'loading' | 'success' | 'error'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const API_URL = '/api'
 
 export function useChatFlow(speak: (text: string, onEnd?: () => void) => void) {
   const [conversationId, setConversationId] = useState('')

@@ -1,44 +1,54 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Loader, OrbitControls } from '@react-three/drei'
+import { XR, type XRStore } from '@react-three/xr'
 
 import type { TurtleAnimationState } from '../domain/types'
+import { xrModes, type XRMode } from '../domain/xr'
 import Tortuga3D from './Tortuga3D'
 
 type Props = {
   animationState: TurtleAnimationState
+  xrMode: XRMode
+  xrStore: XRStore
 }
 
-export default function Scene3D({ animationState }: Props) {
+export default function Scene3D({ animationState, xrMode, xrStore }: Props) {
+  const isDesktop = xrMode === xrModes.desktop
+
   return (
     <div className="scene-3d-container">
       <Canvas camera={{ position: [0, 0, 8], fov: 40 }} style={{ width: '100%', height: '100%' }} shadows>
-        <ambientLight intensity={0.6} />
-        <directionalLight
-          position={[10, 10, 5]}
-          intensity={1}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        <pointLight position={[-10, -10, -5]} intensity={0.5} />
+        <XR store={xrStore}>
+          <ambientLight intensity={0.6} />
+          <directionalLight
+            position={[10, 10, 5]}
+            intensity={1}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+          />
+          <pointLight position={[-10, -10, -5]} intensity={0.5} />
 
-        <Environment preset="sunset" />
+          {isDesktop && <Environment preset="sunset" />}
 
-        <Suspense fallback={null}>
-          <Tortuga3D animationState={animationState} />
-        </Suspense>
+          <Suspense fallback={null}>
+            <Tortuga3D animationState={animationState} xrMode={xrMode} />
+          </Suspense>
 
-        <OrbitControls
-          enableZoom
-          enablePan={false}
-          autoRotate={false}
-          target={[0, -1, 0]}
-          maxPolarAngle={Math.PI / 2}
-          minPolarAngle={Math.PI / 3}
-          minDistance={5}
-          maxDistance={15}
-        />
+          {isDesktop && (
+            <OrbitControls
+              enableZoom
+              enablePan={false}
+              autoRotate={false}
+              target={[0, -1, 0]}
+              maxPolarAngle={Math.PI / 2}
+              minPolarAngle={Math.PI / 3}
+              minDistance={5}
+              maxDistance={15}
+            />
+          )}
+        </XR>
       </Canvas>
       <Loader />
     </div>

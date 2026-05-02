@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["./scripts/coolify_build.sh"]
+
+[start]
+cmd = "./scripts/coolify_start.sh"

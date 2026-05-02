@@ -1,162 +1,84 @@
-# Turtlector 
+# Turtlector
 
+Single-service deployment with **FastAPI + React (Vite build)**.
 
-##  Descripción
+## Architecture
+- Backend: FastAPI (`backend/`)
+- Frontend: React + Vite (`frontend/`)
+- Production runtime: one Python process (`uvicorn`) that serves:
+  - API under `/api/*`
+  - Frontend static bundle from `frontend/dist`
 
-Una versión tortuga del sobrero seleccionador para saber a que facultad y a que carrera eres mas posible de pertenecer.
+## Local Development
 
-##  Arquitectura del Proyecto
+### Prerequisites
+- Python 3.11
+- Node 20+
+- npm
+- `uv` (optional, recommended)
 
-### Backend
-- **Framework**: FastAPI (Python)
-- **IA**: Google Gemini para análisis de imágenes
-- **Audio**: Whisper para procesamiento de audio
-- **Estructura**: API REST modular
-
-### Frontend
-- **Framework**: React + TypeScript
-- **3D Engine**: React Three Fiber
-- **Utilidades 3D**: Drei
-- **Build Tool**: Vite
-- **Styling**: CSS/Styled Components
-
-##  Estructura del Proyecto
-
-```
-Turtlector/
-├── backend/
-│   ├── app/
-│   │   ├── config/     # Configuraciones
-│   │   ├── models/     # Modelos de datos
-│   │   ├── routers/    # Endpoints de API
-│   │   ├── services/   # Lógica de negocio
-│   │   └── main.py     # Punto de entrada
-│   ├── uploads/        # Archivos subidos
-│   └── .env.example    # Variables de entorno
-├── frontend/
-│   ├── src/            # Código fuente React
-│   ├── public/         # Archivos estáticos
-│   └── package.json    # Dependencias Node.js
-└── docker-compose.yml  # Orquestación de contenedores
-```
-
-##  Instalación y Ejecución
-
-### Prerrequisitos
-- Docker y Docker Compose
-- Node.js 18+ (para desarrollo local)
-- Python 3.11+ (para desarrollo local)
-
-### Ejecución con Docker (Recomendado)
-
-1. Clona el repositorio:
+### Install
 ```bash
-git clone <repository-url>
-cd Turtlector
+cd frontend && npm ci
+cd ../backend
+uv sync --no-dev
 ```
 
-2. Configura las variables de entorno:
-```bash
-cp backend/.env.example backend/.env
-# Edita backend/.env con tus claves de API
-```
-
-3. Ejecuta con Docker Compose:
-```bash
-docker-compose up --build
-```
-
-4. Accede a la aplicación:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - Documentación API: http://localhost:8000/docs
-
-### Desarrollo Local
-
-#### Backend
+If you do not use `uv`:
 ```bash
 cd backend
-python -m venv env
-
-uv venv env #en caso de tener Ultraviolet
-
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-uv pip install -r requirements.txt #en caso de tener Ultraviolet
-
-uvicorn app.main:app --reload --port 8000
+python -m pip install --upgrade pip
+python -m pip install .
 ```
 
-#### Frontend
+### Run frontend + backend (with Vite proxy)
 ```bash
-cd frontend
-npm install
-npm run dev
+./scripts/dev.sh
 ```
 
-##  Configuración
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000/api`
+- API docs: `http://localhost:8000/docs`
 
-### Variables de Entorno (Backend)
+`frontend/vite.config.ts` proxies `/api` to `http://localhost:8000` during development.
 
-Copia `.env.example` a `.env` y configura:
+## Production Build and Run (No Docker)
+
+### Build
+```bash
+./scripts/coolify_build.sh
+```
+
+### Start
+```bash
+./scripts/coolify_start.sh
+```
+
+This serves the built frontend and API from one FastAPI process.
+
+## Coolify (Nixpacks) Setup
+
+Use a normal application (non-Docker) pointing to this repository.
+
+- Build Command: `./scripts/coolify_build.sh`
+- Start Command: `./scripts/coolify_start.sh`
+- Port: `PORT` environment variable (defaults to `8000` if unset)
+
+A `nixpacks.toml` is included with these commands.
+
+### Required Environment Variables
+Configure these in Coolify (example):
 
 ```env
-GEMINI_API_KEY=tu_clave_de_gemini
-WHISPER_MODEL=base
-UPLOAD_DIR=uploads
-MAX_FILE_SIZE=10485760
+GEMINI_API_KEY=...
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+OPENAI_API_KEY=...
 ```
 
-##  Documentación de APIs y Tecnologías
+## API Path Notes
+- Chat endpoint: `POST /api/chat/send`
+- Health: `GET /health`
 
-### Tecnologías Principales
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Framework web moderno para Python
-- **[React Three Fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction)** - React renderer para Three.js
-- **[Drei](https://github.com/pmndrs/drei)** - Utilidades para React Three Fiber
-- **[Google Gemini](https://ai.google.dev/docs)** - API de IA de Google
-- **[OpenAI Whisper](https://openai.com/research/whisper)** - Modelo de reconocimiento de voz
-
-### APIs de Desarrollo
-- **[Vite](https://vitejs.dev/)** - Build tool para frontend
-- **[Three.js](https://threejs.org/docs/)** - Biblioteca 3D para JavaScript
-- **[TypeScript](https://www.typescriptlang.org/docs/)** - Superset tipado de JavaScript
-
-## Docker
-
-### Contenedores Incluidos
-
-- **Backend**: FastAPI + Python 3.11
-- **Frontend**: Node.js + Nginx para producción
-- **Volúmenes**: Persistencia de uploads y configuraciones
-
-### Comandos Docker Útiles
-
-```bash
-# Construir y ejecutar
-docker-compose up --build
-
-# Ejecutar en segundo plano
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener servicios
-docker-compose down
-
-# Limpiar volúmenes
-docker-compose down -v
-```
-
-
-
-## Licencia
-
-Me imagino que para TAWS. Ver el archivo `LICENSE` sabra dios donde esta.
-
-## 👥 Autores
-
-- No olvidar poner los nombres
-
-
+## Why `/api` + Vite Proxy
+- Development: Vite runs on `5173`, backend on `8000`; proxy forwards `/api` correctly.
+- Production: frontend is served by FastAPI on the same origin; `/api` stays correct without extra frontend env config.

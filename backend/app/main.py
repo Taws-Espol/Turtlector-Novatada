@@ -1,8 +1,10 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config.settings import settings
 from app.schemas.response import ErrorResponse, HealthResponse
@@ -30,7 +32,7 @@ app.add_middleware(
     allow_headers=settings.cors_headers,
 )
 
-app.include_router(chat.router)
+app.include_router(chat.router, prefix="/api")
 
 
 @app.exception_handler(HTTPException)
@@ -66,9 +68,19 @@ async def health_check():
     return HealthResponse(status="healthy", version=settings.app_version)
 
 
+frontend_dist_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if frontend_dist_dir.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist_dir), html=True), name="frontend")
+else:
+    logger.warning(
+        "Frontend dist directory not found. Build frontend before starting production server.",
+        extra={"expected_dir": str(frontend_dist_dir)},
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "main:app", host=settings.host, port=settings.port, reload=settings.reload
+        "app.main:app", host=settings.host, port=settings.port, reload=settings.reload
     )
