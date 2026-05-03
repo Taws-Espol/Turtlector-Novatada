@@ -39,24 +39,30 @@ function App() {
     return turtleAnimationStates.standby
   }, [chatState.isSpeaking, chatState.requestStatus, listening])
 
-  const handleMicrophoneClick = async (e: MouseEvent<HTMLButtonElement>) => {
+  const handleMicrophoneClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
+    console.log("preventDefault")
 
     if (!listening) {
       startListening()
+      console.log("start listening")
       return
     }
 
     stopListening()
+    console.log("stop listening")
 
     const text = transcript.trim()
+    console.log("trim")
     if (!text) {
       resetTranscript()
       return
     }
 
-    await submitUserMessage(text)
+    submitUserMessage(text)
+    console.log("submit text" + text)
     resetTranscript()
+    console.log("submit text" + text)
   }
 
   if (!browserSupportsSpeechRecognition || !hasSpeechSynthesisSupport) {
@@ -94,7 +100,7 @@ function App() {
               height={30}
               alt="TAWS"
               onError={e => {
-                ;(e.target as HTMLImageElement).src = '/vite.svg'
+                ; (e.target as HTMLImageElement).src = '/vite.svg'
               }}
             />
           </div>
