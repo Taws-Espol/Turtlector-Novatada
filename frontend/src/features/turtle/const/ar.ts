@@ -1,2 +1,11 @@
-export const AR_FOLLOW_DISTANCE = 1.15
-export const AR_VERTICAL_OFFSET = -0.2
+export const AR_FOLLOW_TARGET_DISTANCE = 1.15
+export const AR_FOLLOW_VERTICAL_OFFSET = -0.2
+
+export const AR_FOLLOW_MIN_DISTANCE = 0.75
+export const AR_FOLLOW_MAX_DISTANCE = 1.6
+
+export const AR_FOLLOW_POSITION_LERP = 0.1
+export const AR_FOLLOW_ROTATION_LERP = 0.16
+
+export const AR_REACQUIRE_DISTANCE = 2.1
+export const AR_REACQUIRE_FORWARD_DOT = 0.1
