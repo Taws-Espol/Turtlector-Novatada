@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Group, LoopRepeat, Matrix4, Quaternion, Vector3 } from 'three'
+import { Group, LoopRepeat, Vector3 } from 'three'
 
 import type { TurtleAnimationState } from '../domain/types'
 import {
-  AR_FOLLOW_MAX_DISTANCE,
-  AR_FOLLOW_MIN_DISTANCE,
-  AR_FOLLOW_POSITION_LERP,
-  AR_FOLLOW_ROTATION_LERP,
-  AR_FOLLOW_TARGET_DISTANCE,
-  AR_FOLLOW_VERTICAL_OFFSET,
-  AR_REACQUIRE_DISTANCE,
-  AR_REACQUIRE_FORWARD_DOT,
+  AR_CAMERA_RELATIVE_DISTANCE,
+  AR_CAMERA_RELATIVE_VERTICAL_OFFSET,
 } from '../const/ar'
 import { TURTLE_ACTION_NAMES_BY_STATE } from '../domain/animations'
 import { TURTLE_MODEL_BY_STATE } from '../domain/models'
@@ -48,11 +42,7 @@ const TURTLE_LAYOUT_BY_MODE: Record<XRMode, { position: [number, number, number]
 export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: Props) {
   const groupRef = useRef<Group>(null)
   const arForwardRef = useRef(new Vector3())
-  const arToTurtleRef = useRef(new Vector3())
   const arTargetRef = useRef(new Vector3())
-  const arLookTargetRef = useRef(new Vector3())
-  const arQuaternionRef = useRef(new Quaternion())
-  const arLookAtMatrixRef = useRef(new Matrix4())
 
   const standby = useGLTF(TURTLE_MODEL_BY_STATE.standby)
   const listening = useGLTF(TURTLE_MODEL_BY_STATE.listening)
@@ -109,41 +99,13 @@ export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: 
   useFrame(({ camera }) => {
     if (xrMode === xrModes.ar && groupRef.current) {
       camera.getWorldDirection(arForwardRef.current)
+      arTargetRef.current
+        .copy(camera.position)
+        .add(arForwardRef.current.multiplyScalar(AR_CAMERA_RELATIVE_DISTANCE))
+      arTargetRef.current.y += AR_CAMERA_RELATIVE_VERTICAL_OFFSET
 
-      arToTurtleRef.current.copy(groupRef.current.position).sub(camera.position)
-      const currentDistance = arToTurtleRef.current.length()
-      const forwardAlignment =
-        currentDistance > 0.0001
-          ? arToTurtleRef.current.normalize().dot(arForwardRef.current)
-          : 1
-
-      const shouldReacquire =
-        !Number.isFinite(currentDistance) ||
-        currentDistance > AR_REACQUIRE_DISTANCE ||
-        forwardAlignment < AR_REACQUIRE_FORWARD_DOT
-
-      const nextDistance = shouldReacquire
-        ? AR_FOLLOW_TARGET_DISTANCE
-        : Math.min(
-            AR_FOLLOW_MAX_DISTANCE,
-            Math.max(AR_FOLLOW_MIN_DISTANCE, currentDistance || AR_FOLLOW_TARGET_DISTANCE),
-          )
-
-      arTargetRef.current.copy(camera.position).add(arForwardRef.current.multiplyScalar(nextDistance))
-      arTargetRef.current.y += AR_FOLLOW_VERTICAL_OFFSET
-
-      groupRef.current.position.lerp(arTargetRef.current, AR_FOLLOW_POSITION_LERP)
-
-      arLookTargetRef.current.copy(camera.position)
-      arLookTargetRef.current.y = groupRef.current.position.y
-
-      arLookAtMatrixRef.current.lookAt(
-        groupRef.current.position,
-        arLookTargetRef.current,
-        groupRef.current.up,
-      )
-      arQuaternionRef.current.setFromRotationMatrix(arLookAtMatrixRef.current)
-      groupRef.current.quaternion.slerp(arQuaternionRef.current, AR_FOLLOW_ROTATION_LERP)
+      groupRef.current.position.copy(arTargetRef.current)
+      groupRef.current.quaternion.copy(camera.quaternion)
       groupRef.current.rotateY(Math.PI)
     }
 
