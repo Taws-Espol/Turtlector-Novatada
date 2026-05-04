@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { MouseEvent } from 'react'
 
 import ChatPanel from './features/chat/components/ChatPanel'
 import { useChatFlow } from './features/chat/hooks/useChatFlow'
+import type { ChatMessage } from './features/chat/types'
 import Scene3D from './features/turtle/components/Scene3D'
 import { turtleAnimationStates } from './features/turtle/domain/types'
 import { xrModes } from './features/turtle/domain/xr'
@@ -27,6 +28,9 @@ function App() {
   const { submitUserMessage, chatState } = useChatFlow(speak)
   const { xrMode, xrStore, support, status, error, enterVR, enterAR, exitXR } = useXRSession()
 
+  const arListeningTriggeredRef = useRef(false)
+  const previousListeningRef = useRef(false)
+
   const turtleAnimationState = useMemo(() => {
     if (listening || chatState.requestStatus === 'loading') {
       return turtleAnimationStates.listening
@@ -39,31 +43,77 @@ function App() {
     return turtleAnimationStates.standby
   }, [chatState.isSpeaking, chatState.requestStatus, listening])
 
+  const lastAssistantMessage = useMemo(() => {
+    for (let i = chatState.messages.length - 1; i >= 0; i -= 1) {
+      const candidate: ChatMessage = chatState.messages[i]
+      if (candidate.role === 'assistant') {
+        return candidate.text
+      }
+    }
+
+    return 'No hay respuesta aún.'
+  }, [chatState.messages])
+
+  const arConversationStatus = useMemo(() => {
+    if (xrMode !== xrModes.ar) return ''
+    if (chatState.requestStatus === 'loading') return 'Pensando...'
+    if (chatState.isSpeaking) return 'Tortuga hablando...'
+    if (listening) return 'Escuchando...'
+    return 'Toca la tortuga para hablar'
+  }, [chatState.isSpeaking, chatState.requestStatus, listening, xrMode])
+
   const handleMicrophoneClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log("preventDefault")
 
     if (!listening) {
-      startListening()
-      console.log("start listening")
+      startListening({ continuous: true, language: 'es-ES' })
       return
     }
 
     stopListening()
-    console.log("stop listening")
 
     const text = transcript.trim()
-    console.log("trim")
     if (!text) {
       resetTranscript()
       return
     }
 
-    submitUserMessage(text)
-    console.log("submit text" + text)
+    void submitUserMessage(text)
     resetTranscript()
-    console.log("submit text" + text)
   }
+
+  const handleARTurtleInteract = () => {
+    if (xrMode !== xrModes.ar) return
+    if (listening || chatState.requestStatus === 'loading' || chatState.isSpeaking) return
+
+    resetTranscript()
+    arListeningTriggeredRef.current = true
+    startListening({ continuous: false, language: 'es-ES' })
+  }
+
+  useEffect(() => {
+    const wasListening = previousListeningRef.current
+    previousListeningRef.current = listening
+
+    if (xrMode !== xrModes.ar) {
+      arListeningTriggeredRef.current = false
+      return
+    }
+
+    if (!wasListening || listening) return
+    if (!arListeningTriggeredRef.current) return
+
+    arListeningTriggeredRef.current = false
+
+    const text = transcript.trim()
+    if (!text) {
+      resetTranscript()
+      return
+    }
+
+    void submitUserMessage(text)
+    resetTranscript()
+  }, [listening, resetTranscript, submitUserMessage, transcript, xrMode])
 
   if (!browserSupportsSpeechRecognition || !hasSpeechSynthesisSupport) {
     return <span>Lo sentimos, tu navegador no soporta el reconocimiento de voz.</span>
@@ -100,7 +150,7 @@ function App() {
               height={30}
               alt="TAWS"
               onError={e => {
-                ; (e.target as HTMLImageElement).src = '/vite.svg'
+                ;(e.target as HTMLImageElement).src = '/vite.svg'
               }}
             />
           </div>
@@ -146,11 +196,23 @@ function App() {
         </p>
       </div>
 
+      {xrMode === xrModes.ar && (
+        <section className="ar-overlay" aria-live="polite">
+          <p className="ar-overlay-status">{arConversationStatus}</p>
+          <p className="ar-overlay-message">{lastAssistantMessage}</p>
+        </section>
+      )}
+
       <main className="main-content">
         <div className="layout-chat">
           <aside className="left-col">
             <div className="tortuga-3d-container">
-              <Scene3D animationState={turtleAnimationState} xrMode={xrMode} xrStore={xrStore} />
+              <Scene3D
+                animationState={turtleAnimationState}
+                xrMode={xrMode}
+                xrStore={xrStore}
+                onTurtleInteract={handleARTurtleInteract}
+              />
             </div>
           </aside>
 

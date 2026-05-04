@@ -11,6 +11,7 @@ import { xrModes, type XRMode } from '../domain/xr'
 type Props = {
   animationState: TurtleAnimationState
   xrMode: XRMode
+  onTurtleInteract?: () => void
 }
 
 const PRELOAD_MODELS = Array.from(new Set(Object.values(TURTLE_MODEL_BY_STATE)))
@@ -34,7 +35,7 @@ const TURTLE_LAYOUT_BY_MODE: Record<XRMode, { position: [number, number, number]
   },
 }
 
-export default function Tortuga3D({ animationState, xrMode }: Props) {
+export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: Props) {
   const groupRef = useRef<Group>(null)
 
   const standby = useGLTF(TURTLE_MODEL_BY_STATE.standby)
@@ -104,6 +105,11 @@ export default function Tortuga3D({ animationState, xrMode }: Props) {
       position={layout.position}
       scale={layout.scale}
       rotation={[0, -Math.PI / 2, 0]}
+      onClick={() => {
+        if (xrMode === xrModes.ar) {
+          onTurtleInteract?.()
+        }
+      }}
     >
       <primitive object={currentScene} />
     </group>

@@ -11,9 +11,10 @@ type Props = {
   animationState: TurtleAnimationState
   xrMode: XRMode
   xrStore: XRStore
+  onTurtleInteract?: () => void
 }
 
-export default function Scene3D({ animationState, xrMode, xrStore }: Props) {
+export default function Scene3D({ animationState, xrMode, xrStore, onTurtleInteract }: Props) {
   const isDesktop = xrMode === xrModes.desktop
 
   return (
@@ -33,7 +34,11 @@ export default function Scene3D({ animationState, xrMode, xrStore }: Props) {
           {isDesktop && <Environment preset="sunset" />}
 
           <Suspense fallback={null}>
-            <Tortuga3D animationState={animationState} xrMode={xrMode} />
+            <Tortuga3D
+              animationState={animationState}
+              xrMode={xrMode}
+              onTurtleInteract={onTurtleInteract}
+            />
           </Suspense>
 
           {isDesktop && (
