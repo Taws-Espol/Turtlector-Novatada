@@ -14,12 +14,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app/backend
 
-# OS libs required by scientific/audio dependencies used by backend
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libasound2 \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY backend/ /app/backend/
 RUN pip install --upgrade pip && pip install .
 
