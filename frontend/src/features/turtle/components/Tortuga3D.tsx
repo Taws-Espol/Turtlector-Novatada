@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Group, LoopRepeat } from 'three'
+import { Group, LoopRepeat, Vector3 } from 'three'
 
 import type { TurtleAnimationState } from '../domain/types'
+import { AR_FOLLOW_DISTANCE, AR_VERTICAL_OFFSET } from '../const/ar'
 import { TURTLE_ACTION_NAMES_BY_STATE } from '../domain/animations'
 import { TURTLE_MODEL_BY_STATE } from '../domain/models'
 import { xrModes, type XRMode } from '../domain/xr'
@@ -37,6 +38,8 @@ const TURTLE_LAYOUT_BY_MODE: Record<XRMode, { position: [number, number, number]
 
 export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: Props) {
   const groupRef = useRef<Group>(null)
+  const arForwardRef = useRef(new Vector3())
+  const arTargetRef = useRef(new Vector3())
 
   const standby = useGLTF(TURTLE_MODEL_BY_STATE.standby)
   const listening = useGLTF(TURTLE_MODEL_BY_STATE.listening)
@@ -90,7 +93,19 @@ export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: 
     targetAction.play()
   }, [actions, animationState])
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
+    if (xrMode === xrModes.ar && groupRef.current) {
+      camera.getWorldDirection(arForwardRef.current)
+      arTargetRef.current
+        .copy(camera.position)
+        .add(arForwardRef.current.multiplyScalar(AR_FOLLOW_DISTANCE))
+      arTargetRef.current.y += AR_VERTICAL_OFFSET
+
+      groupRef.current.position.copy(arTargetRef.current)
+      groupRef.current.lookAt(camera.position)
+      groupRef.current.rotateY(Math.PI)
+    }
+
     const targetAction = resolveTargetAction()
     if (targetAction && !targetAction.isRunning()) {
       targetAction.play()
