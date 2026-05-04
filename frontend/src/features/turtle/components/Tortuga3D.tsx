@@ -7,6 +7,7 @@ import type { TurtleAnimationState } from '../domain/types'
 import {
   AR_CAMERA_RELATIVE_DISTANCE,
   AR_CAMERA_RELATIVE_VERTICAL_OFFSET,
+  AR_CAMERA_RELATIVE_YAW_OFFSET,
 } from '../const/ar'
 import { TURTLE_ACTION_NAMES_BY_STATE } from '../domain/animations'
 import { TURTLE_MODEL_BY_STATE } from '../domain/models'
@@ -106,7 +107,7 @@ export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: 
 
       groupRef.current.position.copy(arTargetRef.current)
       groupRef.current.quaternion.copy(camera.quaternion)
-      groupRef.current.rotateY(Math.PI)
+      groupRef.current.rotateY(Math.PI + AR_CAMERA_RELATIVE_YAW_OFFSET)
     }
 
     const targetAction = resolveTargetAction()
