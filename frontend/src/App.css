@@ -430,6 +430,22 @@ body{
 .footer a:hover{ color:#e6f7ff; text-decoration:underline }
 
 @media (max-width: 920px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .pill {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .brand {
+    order: 2;
+  }
+
   .layout-chat {
     grid-template-columns: 1fr;
   }
