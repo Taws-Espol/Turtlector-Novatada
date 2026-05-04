@@ -5,6 +5,7 @@ import { XR, type XRStore } from '@react-three/xr'
 
 import type { TurtleAnimationState } from '../domain/types'
 import { xrModes, type XRMode } from '../domain/xr'
+import MetaverseDecor from './MetaverseDecor'
 import Tortuga3D from './Tortuga3D'
 
 type Props = {
@@ -32,6 +33,8 @@ export default function Scene3D({ animationState, xrMode, xrStore, onTurtleInter
           <pointLight position={[-10, -10, -5]} intensity={0.5} />
 
           {isDesktop && <Environment preset="sunset" />}
+
+          <MetaverseDecor xrMode={xrMode} />
 
           <Suspense fallback={null}>
             <Tortuga3D
