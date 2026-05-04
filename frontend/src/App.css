@@ -451,12 +451,14 @@ body{
   }
 
   .left-col {
-    justify-content:flex-start;
+    justify-content:center;
+    width:100%;
   }
 
   .tortuga-3d-container {
     width:min(350px, 100%);
     height:min(350px, 70vw);
+    margin:0 auto;
   }
 
   .microphone-button {
