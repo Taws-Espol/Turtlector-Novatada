@@ -16,7 +16,6 @@ type Props = {
   xrStore: XRStore
   isListening: boolean
   isThinking: boolean
-  isSpeaking: boolean
   micDisabled: boolean
   onMicToggle: () => void
   onTurtleInteract?: () => void
@@ -28,7 +27,6 @@ export default function Scene3D({
   xrStore,
   isListening,
   isThinking,
-  isSpeaking,
   micDisabled,
   onMicToggle,
   onTurtleInteract,
@@ -65,7 +63,7 @@ export default function Scene3D({
               isDisabled={micDisabled}
               onToggle={onMicToggle}
             />
-            <ThinkingIndicator3D xrMode={xrMode} visible={isThinking || isSpeaking} />
+            <ThinkingIndicator3D xrMode={xrMode} visible={isThinking} />
           </Suspense>
 
           {isDesktop && (

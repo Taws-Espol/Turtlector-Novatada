@@ -213,7 +213,6 @@ function App() {
                 xrStore={xrStore}
                 isListening={isListeningActive}
                 isThinking={isThinking}
-                isSpeaking={isSpeakingActive}
                 micDisabled={voiceMode === 'backend_audio' && !canUseBackendAudio}
                 onMicToggle={() => {
                   void toggleVoiceCapture()
