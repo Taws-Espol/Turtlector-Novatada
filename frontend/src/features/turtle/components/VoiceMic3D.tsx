@@ -10,12 +10,14 @@ type Props = {
 }
 
 const MIC_LAYOUT_BY_MODE: Record<XRMode, [number, number, number]> = {
-  [xrModes.desktop]: [0, 2.4, 3.2],
-  [xrModes.vr]: [0, 3.1, 2.4],
-  [xrModes.ar]: [0, 1.8, 0.9],
+  [xrModes.desktop]: [0, 0, 0],
+  [xrModes.vr]: [0, 2.6, -2.1],
+  [xrModes.ar]: [0, 2.1, -1.3],
 }
 
 export default function VoiceMic3D({ xrMode, isListening, isDisabled, onToggle }: Props) {
+  if (xrMode === xrModes.desktop) return null
+
   const color = useMemo(() => {
     if (isDisabled) return '#8b8b95'
     if (isListening) return '#ff4f63'
