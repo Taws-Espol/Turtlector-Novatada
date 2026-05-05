@@ -15,7 +15,7 @@ class DeepgramSTT:
                 response = deepgram.listen.v1.media.transcribe_file(
                     request=audio_file.read(),
                     model="nova-3",
-                    # language="en",
+                    language="es",
                 )
 
             return response.results.channels[0].alternatives[0].transcript
@@ -27,7 +27,10 @@ class DeepgramSTT:
 class DeepgramTTS:
     def synthesize(self, text: str) -> bytes:
         try:
-            response = deepgram.speak.v1.audio.generate(text=text)
+            response = deepgram.speak.v1.audio.generate(
+                text=text,
+                model="aura-2-celeste-es",
+            )
 
             if hasattr(response, "stream"):
                 return response.stream.getvalue()
