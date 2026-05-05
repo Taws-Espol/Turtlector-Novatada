@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     gemini_api_key: str = ""
+    deepgram_api_key: str = ""
     app_name: str = "Turtlector API"
     app_version: str = "1.0.0"
     cors_origins: Union[List[str], str] = [
