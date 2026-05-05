@@ -6,16 +6,33 @@ import { XR, type XRStore } from '@react-three/xr'
 import type { TurtleAnimationState } from '../domain/types'
 import { xrModes, type XRMode } from '../domain/xr'
 import MetaverseDecor from './MetaverseDecor'
+import ThinkingIndicator3D from './ThinkingIndicator3D'
 import Tortuga3D from './Tortuga3D'
+import VoiceMic3D from './VoiceMic3D'
 
 type Props = {
   animationState: TurtleAnimationState
   xrMode: XRMode
   xrStore: XRStore
+  isListening: boolean
+  isThinking: boolean
+  isSpeaking: boolean
+  micDisabled: boolean
+  onMicToggle: () => void
   onTurtleInteract?: () => void
 }
 
-export default function Scene3D({ animationState, xrMode, xrStore, onTurtleInteract }: Props) {
+export default function Scene3D({
+  animationState,
+  xrMode,
+  xrStore,
+  isListening,
+  isThinking,
+  isSpeaking,
+  micDisabled,
+  onMicToggle,
+  onTurtleInteract,
+}: Props) {
   const isDesktop = xrMode === xrModes.desktop
 
   return (
@@ -42,6 +59,13 @@ export default function Scene3D({ animationState, xrMode, xrStore, onTurtleInter
               xrMode={xrMode}
               onTurtleInteract={onTurtleInteract}
             />
+            <VoiceMic3D
+              xrMode={xrMode}
+              isListening={isListening}
+              isDisabled={micDisabled}
+              onToggle={onMicToggle}
+            />
+            <ThinkingIndicator3D xrMode={xrMode} visible={isThinking || isSpeaking} />
           </Suspense>
 
           {isDesktop && (

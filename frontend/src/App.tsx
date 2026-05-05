@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import type { MouseEvent } from 'react'
 
 import ChatPanel from './features/chat/components/ChatPanel'
@@ -41,20 +41,21 @@ function App() {
   })
   const { xrMode, xrStore, support, status, error, enterVR, enterAR, exitXR } = useXRSession()
 
-  const arListeningTriggeredRef = useRef(false)
-  const previousListeningRef = useRef(false)
+  const isListeningActive = listening || isRecording
+  const isSpeakingActive = chatState.isSpeaking || isBackendPlaying
+  const isThinking = chatState.requestStatus === 'loading'
 
   const turtleAnimationState = useMemo(() => {
-    if (listening || isRecording || chatState.requestStatus === 'loading') {
+    if (isListeningActive || isThinking) {
       return turtleAnimationStates.listening
     }
 
-    if (chatState.isSpeaking || isBackendPlaying) {
+    if (isSpeakingActive) {
       return turtleAnimationStates.speaking
     }
 
     return turtleAnimationStates.standby
-  }, [chatState.isSpeaking, chatState.requestStatus, isBackendPlaying, isRecording, listening])
+  }, [isListeningActive, isSpeakingActive, isThinking])
 
   const lastAssistantMessage = useMemo(() => {
     for (let i = chatState.messages.length - 1; i >= 0; i -= 1) {
@@ -69,14 +70,14 @@ function App() {
 
   const arConversationStatus = useMemo(() => {
     if (xrMode !== xrModes.ar) return ''
-    if (chatState.requestStatus === 'loading') return 'Pensando...'
-    if (chatState.isSpeaking || isBackendPlaying) return 'Tortuga hablando...'
-    if (listening || isRecording) return 'Escuchando...'
+    if (isThinking) return 'Pensando...'
+    if (isSpeakingActive) return 'Tortuga hablando...'
+    if (isListeningActive) return 'Escuchando...'
     return 'Toca la tortuga para hablar'
-  }, [chatState.isSpeaking, chatState.requestStatus, isBackendPlaying, isRecording, listening, xrMode])
+  }, [isListeningActive, isSpeakingActive, isThinking, xrMode])
 
-  const handleMicrophoneClick = async (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+  const toggleVoiceCapture = async () => {
+    if (isThinking || isSpeakingActive) return
 
     if (voiceMode === 'backend_audio') {
       if (!canUseBackendAudio) return
@@ -108,56 +109,15 @@ function App() {
     resetTranscript()
   }
 
-  const handleARTurtleInteract = () => {
-    if (xrMode !== xrModes.ar) return
-    if (listening || chatState.requestStatus === 'loading' || chatState.isSpeaking || isBackendPlaying) {
-      return
-    }
-
-    arListeningTriggeredRef.current = true
-    if (voiceMode === 'backend_audio') {
-      if (!canUseBackendAudio) return
-      if (!isRecording) {
-        void startRecording()
-        return
-      }
-
-      arListeningTriggeredRef.current = false
-      void stopRecording().then(payload => {
-        if (!payload) return
-        void submitUserAudio(payload)
-      })
-      return
-    }
-
-    resetTranscript()
-    startListening({ continuous: false, language: 'es-ES' })
+  const handleMicrophoneClick = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    await toggleVoiceCapture()
   }
 
-  useEffect(() => {
-    const wasListening = previousListeningRef.current
-    previousListeningRef.current = listening
-
-    if (xrMode !== xrModes.ar) {
-      arListeningTriggeredRef.current = false
-      return
-    }
-
-    if (voiceMode === 'backend_audio') return
-    if (!wasListening || listening) return
-    if (!arListeningTriggeredRef.current) return
-
-    arListeningTriggeredRef.current = false
-
-    const text = transcript.trim()
-    if (!text) {
-      resetTranscript()
-      return
-    }
-
-    void submitUserMessage(text)
-    resetTranscript()
-  }, [listening, resetTranscript, submitUserMessage, transcript, voiceMode, xrMode])
+  const handleARTurtleInteract = () => {
+    if (xrMode !== xrModes.ar) return
+    void toggleVoiceCapture()
+  }
 
   return (
     <div className="turtlector-app">
@@ -251,6 +211,13 @@ function App() {
                 animationState={turtleAnimationState}
                 xrMode={xrMode}
                 xrStore={xrStore}
+                isListening={isListeningActive}
+                isThinking={isThinking}
+                isSpeaking={isSpeakingActive}
+                micDisabled={voiceMode === 'backend_audio' && !canUseBackendAudio}
+                onMicToggle={() => {
+                  void toggleVoiceCapture()
+                }}
                 onTurtleInteract={handleARTurtleInteract}
               />
             </div>
@@ -258,7 +225,7 @@ function App() {
 
           <ChatPanel
             messages={chatState.messages}
-            listening={listening || isRecording}
+            listening={isListeningActive}
             showVoiceSelector={voiceMode === 'native'}
             voices={voices}
             selectedVoiceName={selectedVoiceName}
@@ -267,7 +234,7 @@ function App() {
         </div>
 
         <button
-          className={`microphone-button ${listening || isRecording ? 'recording' : ''}`}
+          className={`microphone-button ${isListeningActive ? 'recording' : ''}`}
           onClick={handleMicrophoneClick}
         >
           <svg className="microphone-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
