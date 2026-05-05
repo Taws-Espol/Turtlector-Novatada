@@ -1,3 +1,4 @@
+import { Text } from '@react-three/drei'
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { BufferAttribute, BufferGeometry, Color, Group } from 'three'
@@ -116,6 +117,7 @@ export default function MetaverseDecor({ xrMode }: Props) {
   const shardRefs = useRef<Array<Group | null>>([])
   const pillarRefs = useRef<Array<Group | null>>([])
   const planetRefs = useRef<Array<Group | null>>([])
+  const textRingRef = useRef<Group>(null)
 
   const ringTransforms = useMemo(() => createTransforms(modeConfig.rings, 101, 0.85), [modeConfig.rings])
   const shardTransforms = useMemo(() => createTransforms(modeConfig.shards, 203, 0.4), [modeConfig.shards])
@@ -123,6 +125,9 @@ export default function MetaverseDecor({ xrMode }: Props) {
 
   const pointsGeometry = useMemo(() => createPointCloud(modeConfig.points, 409), [modeConfig.points])
   const planets = useMemo(() => createPlanets(modeConfig.planets, 509), [modeConfig.planets])
+  const textAnchors = useMemo(() => Array.from({ length: 8 }, (_, idx) => idx), [])
+  const farthestDeterministicRadius = METAVERSE_RADIUS.max + 1.8
+  const textRingRadius = farthestDeterministicRadius + 0.8
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -155,6 +160,10 @@ export default function MetaverseDecor({ xrMode }: Props) {
       node.position.y = planet.y + Math.sin(t * 0.35 + i) * 0.08
       node.rotation.y += 0.01 * motion
     })
+
+    if (textRingRef.current) {
+      textRingRef.current.rotation.y = t * 0.12 * motion
+    }
   })
 
   return (
@@ -247,6 +256,29 @@ export default function MetaverseDecor({ xrMode }: Props) {
           <meshBasicMaterial color="#4fc3ff" transparent opacity={0.16} side={2} />
         </mesh>
       ))}
+
+      <group ref={textRingRef} position={[0, 1.1, 0]}>
+        {textAnchors.map(index => {
+          const angle = (index / textAnchors.length) * Math.PI * 2
+          const x = Math.cos(angle) * textRingRadius
+          const z = Math.sin(angle) * textRingRadius
+          return (
+            <group key={`text-orbit-${index}`} position={[x, 0, z]} rotation={[0, angle + Math.PI, 0]}>
+              <Text
+                fontSize={1.15}
+                maxWidth={12}
+                anchorX="center"
+                anchorY="middle"
+                color="#8ef7ff"
+                outlineWidth={0.05}
+                outlineColor="#04293b"
+              >
+                MULTIVERSO TAWS
+              </Text>
+            </group>
+          )
+        })}
+      </group>
     </group>
   )
 }

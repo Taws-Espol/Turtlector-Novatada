@@ -11,8 +11,8 @@ type Props = {
 
 const MIC_LAYOUT_BY_MODE: Record<XRMode, [number, number, number]> = {
   [xrModes.desktop]: [0, 0, 0],
-  [xrModes.vr]: [0, 2.6, -2.1],
-  [xrModes.ar]: [0, 2.1, -1.3],
+  [xrModes.vr]: [0, 2.45, -2.1],
+  [xrModes.ar]: [0, 1.95, -1.3],
 }
 
 export default function VoiceMic3D({ xrMode, isListening, isDisabled, onToggle }: Props) {
