@@ -8,7 +8,6 @@ import { xrModes, type XRMode } from '../domain/xr'
 import MetaverseDecor from './MetaverseDecor'
 import ThinkingIndicator3D from './ThinkingIndicator3D'
 import Tortuga3D from './Tortuga3D'
-import VoiceMic3D from './VoiceMic3D'
 
 type Props = {
   animationState: TurtleAnimationState
@@ -55,13 +54,10 @@ export default function Scene3D({
             <Tortuga3D
               animationState={animationState}
               xrMode={xrMode}
-              onTurtleInteract={onTurtleInteract}
-            />
-            <VoiceMic3D
-              xrMode={xrMode}
               isListening={isListening}
-              isDisabled={micDisabled}
-              onToggle={onMicToggle}
+              micDisabled={micDisabled}
+              onMicToggle={onMicToggle}
+              onTurtleInteract={onTurtleInteract}
             />
             <ThinkingIndicator3D xrMode={xrMode} visible={isThinking} />
           </Suspense>

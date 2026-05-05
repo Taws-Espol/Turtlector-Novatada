@@ -9,10 +9,10 @@ type Props = {
   onToggle: () => void
 }
 
-const MIC_LAYOUT_BY_MODE: Record<XRMode, [number, number, number]> = {
-  [xrModes.desktop]: [0, 1.25, 1.1],
-  [xrModes.vr]: [0, 0.95, -1.2],
-  [xrModes.ar]: [0, 0.9, -0.65],
+const MIC_OFFSET_BY_MODE: Record<XRMode, [number, number, number]> = {
+  [xrModes.desktop]: [-0.55, 1.15, 0.35],
+  [xrModes.vr]: [-0.45, 1.1, 0.2],
+  [xrModes.ar]: [-0.4, 1.0, 0.2],
 }
 
 export default function VoiceMic3D({ xrMode, isListening, isDisabled, onToggle }: Props) {
@@ -28,7 +28,7 @@ export default function VoiceMic3D({ xrMode, isListening, isDisabled, onToggle }
     return '#00a5e0'
   }, [isDisabled, isListening])
 
-  const position = MIC_LAYOUT_BY_MODE[xrMode]
+  const position = MIC_OFFSET_BY_MODE[xrMode]
 
   const handleToggle = () => {
     if (isDisabled) return

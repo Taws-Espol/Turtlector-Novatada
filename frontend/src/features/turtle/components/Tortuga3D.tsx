@@ -12,10 +12,14 @@ import {
 import { TURTLE_ACTION_NAMES_BY_STATE } from '../domain/animations'
 import { TURTLE_MODEL_BY_STATE } from '../domain/models'
 import { xrModes, type XRMode } from '../domain/xr'
+import VoiceMic3D from './VoiceMic3D'
 
 type Props = {
   animationState: TurtleAnimationState
   xrMode: XRMode
+  isListening: boolean
+  micDisabled: boolean
+  onMicToggle: () => void
   onTurtleInteract?: () => void
 }
 
@@ -40,7 +44,14 @@ const TURTLE_LAYOUT_BY_MODE: Record<XRMode, { position: [number, number, number]
   },
 }
 
-export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: Props) {
+export default function Tortuga3D({
+  animationState,
+  xrMode,
+  isListening,
+  micDisabled,
+  onMicToggle,
+  onTurtleInteract,
+}: Props) {
   const groupRef = useRef<Group>(null)
   const arForwardRef = useRef(new Vector3())
   const arTargetRef = useRef(new Vector3())
@@ -131,6 +142,12 @@ export default function Tortuga3D({ animationState, xrMode, onTurtleInteract }: 
       }}
     >
       <primitive object={currentScene} />
+      <VoiceMic3D
+        xrMode={xrMode}
+        isListening={isListening}
+        isDisabled={micDisabled}
+        onToggle={onMicToggle}
+      />
     </group>
   )
 }
