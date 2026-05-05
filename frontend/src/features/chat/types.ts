@@ -8,11 +8,14 @@ export type ChatMessage = {
 }
 
 export type ChatSendRequest = {
-  message: string
+  message?: string
+  audio_b64?: string
+  audio_mime_type?: string
   conversation_id?: string
 }
 
 export type ChatSendResponse = {
   response: string
   conversation_id: string
+  audio_b64?: string
 }

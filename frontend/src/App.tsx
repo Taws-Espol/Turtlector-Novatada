@@ -10,6 +10,9 @@ import { xrModes } from './features/turtle/domain/xr'
 import { useXRSession } from './features/turtle/hooks/useXRSession'
 import { useMicrophone } from './features/voice/hooks/useMicrophone'
 import { useSpeechSynthesis } from './features/voice/hooks/useSpeechSynthesis'
+import { useAudioRecorder } from './features/voice/hooks/useAudioRecorder'
+import { useBackendAudioPlayer } from './features/voice/hooks/useBackendAudioPlayer'
+import { useVoiceMode } from './features/voice/hooks/useVoiceMode'
 import './App.css'
 
 function App() {
@@ -24,24 +27,34 @@ function App() {
 
   const { voices, selectedVoiceName, setSelectedVoiceName, speak, hasSpeechSynthesisSupport } =
     useSpeechSynthesis()
+  const { isSupported: recorderSupported, isRecording, startRecording, stopRecording } =
+    useAudioRecorder()
+  const { isPlaying: isBackendPlaying, playFromBase64 } = useBackendAudioPlayer()
 
-  const { submitUserMessage, chatState } = useChatFlow(speak)
+  const voiceMode = useVoiceMode(browserSupportsSpeechRecognition, hasSpeechSynthesisSupport)
+  const canUseBackendAudio = voiceMode === 'backend_audio' && recorderSupported
+
+  const { submitUserMessage, submitUserAudio, chatState } = useChatFlow({
+    voiceMode,
+    speak,
+    playBackendAudio: audioB64 => playFromBase64(audioB64),
+  })
   const { xrMode, xrStore, support, status, error, enterVR, enterAR, exitXR } = useXRSession()
 
   const arListeningTriggeredRef = useRef(false)
   const previousListeningRef = useRef(false)
 
   const turtleAnimationState = useMemo(() => {
-    if (listening || chatState.requestStatus === 'loading') {
+    if (listening || isRecording || chatState.requestStatus === 'loading') {
       return turtleAnimationStates.listening
     }
 
-    if (chatState.isSpeaking) {
+    if (chatState.isSpeaking || isBackendPlaying) {
       return turtleAnimationStates.speaking
     }
 
     return turtleAnimationStates.standby
-  }, [chatState.isSpeaking, chatState.requestStatus, listening])
+  }, [chatState.isSpeaking, chatState.requestStatus, isBackendPlaying, isRecording, listening])
 
   const lastAssistantMessage = useMemo(() => {
     for (let i = chatState.messages.length - 1; i >= 0; i -= 1) {
@@ -57,13 +70,26 @@ function App() {
   const arConversationStatus = useMemo(() => {
     if (xrMode !== xrModes.ar) return ''
     if (chatState.requestStatus === 'loading') return 'Pensando...'
-    if (chatState.isSpeaking) return 'Tortuga hablando...'
-    if (listening) return 'Escuchando...'
+    if (chatState.isSpeaking || isBackendPlaying) return 'Tortuga hablando...'
+    if (listening || isRecording) return 'Escuchando...'
     return 'Toca la tortuga para hablar'
-  }, [chatState.isSpeaking, chatState.requestStatus, listening, xrMode])
+  }, [chatState.isSpeaking, chatState.requestStatus, isBackendPlaying, isRecording, listening, xrMode])
 
-  const handleMicrophoneClick = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleMicrophoneClick = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
+
+    if (voiceMode === 'backend_audio') {
+      if (!canUseBackendAudio) return
+      if (!isRecording) {
+        await startRecording()
+        return
+      }
+
+      const payload = await stopRecording()
+      if (!payload) return
+      await submitUserAudio(payload)
+      return
+    }
 
     if (!listening) {
       startListening({ continuous: true, language: 'es-ES' })
@@ -78,16 +104,33 @@ function App() {
       return
     }
 
-    void submitUserMessage(text)
+    await submitUserMessage(text)
     resetTranscript()
   }
 
   const handleARTurtleInteract = () => {
     if (xrMode !== xrModes.ar) return
-    if (listening || chatState.requestStatus === 'loading' || chatState.isSpeaking) return
+    if (listening || chatState.requestStatus === 'loading' || chatState.isSpeaking || isBackendPlaying) {
+      return
+    }
+
+    arListeningTriggeredRef.current = true
+    if (voiceMode === 'backend_audio') {
+      if (!canUseBackendAudio) return
+      if (!isRecording) {
+        void startRecording()
+        return
+      }
+
+      arListeningTriggeredRef.current = false
+      void stopRecording().then(payload => {
+        if (!payload) return
+        void submitUserAudio(payload)
+      })
+      return
+    }
 
     resetTranscript()
-    arListeningTriggeredRef.current = true
     startListening({ continuous: false, language: 'es-ES' })
   }
 
@@ -100,6 +143,7 @@ function App() {
       return
     }
 
+    if (voiceMode === 'backend_audio') return
     if (!wasListening || listening) return
     if (!arListeningTriggeredRef.current) return
 
@@ -113,11 +157,7 @@ function App() {
 
     void submitUserMessage(text)
     resetTranscript()
-  }, [listening, resetTranscript, submitUserMessage, transcript, xrMode])
-
-  if (!browserSupportsSpeechRecognition || !hasSpeechSynthesisSupport) {
-    return <span>Lo sentimos, tu navegador no soporta el reconocimiento de voz.</span>
-  }
+  }, [listening, resetTranscript, submitUserMessage, transcript, voiceMode, xrMode])
 
   return (
     <div className="turtlector-app">
@@ -218,7 +258,8 @@ function App() {
 
           <ChatPanel
             messages={chatState.messages}
-            listening={listening}
+            listening={listening || isRecording}
+            showVoiceSelector={voiceMode === 'native'}
             voices={voices}
             selectedVoiceName={selectedVoiceName}
             onVoiceChange={setSelectedVoiceName}
@@ -226,7 +267,7 @@ function App() {
         </div>
 
         <button
-          className={`microphone-button ${listening ? 'recording' : ''}`}
+          className={`microphone-button ${listening || isRecording ? 'recording' : ''}`}
           onClick={handleMicrophoneClick}
         >
           <svg className="microphone-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">

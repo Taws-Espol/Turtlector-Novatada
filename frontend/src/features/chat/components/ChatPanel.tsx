@@ -5,6 +5,7 @@ import type { ChatMessage } from '../types'
 type Props = {
   messages: ChatMessage[]
   listening: boolean
+  showVoiceSelector: boolean
   voices: SpeechSynthesisVoice[]
   selectedVoiceName: string
   onVoiceChange: (voiceName: string) => void
@@ -13,6 +14,7 @@ type Props = {
 export default function ChatPanel({
   messages,
   listening,
+  showVoiceSelector,
   voices,
   selectedVoiceName,
   onVoiceChange,
@@ -25,24 +27,26 @@ export default function ChatPanel({
 
   return (
     <section className="chat-panel">
-      <div className="voice-selector-row">
-        <label className="voice-selector-label" htmlFor="voiceSelect">
-          Voz de la tortuga
-        </label>
-        <select
-          id="voiceSelect"
-          className="voice-selector"
-          value={selectedVoiceName}
-          onChange={e => onVoiceChange(e.target.value)}
-          disabled={voices.length === 0}
-        >
-          {voices.map(voice => (
-            <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
-              {voice.name} ({voice.lang})
-            </option>
-          ))}
-        </select>
-      </div>
+      {showVoiceSelector && (
+        <div className="voice-selector-row">
+          <label className="voice-selector-label" htmlFor="voiceSelect">
+            Voz de la tortuga
+          </label>
+          <select
+            id="voiceSelect"
+            className="voice-selector"
+            value={selectedVoiceName}
+            onChange={e => onVoiceChange(e.target.value)}
+            disabled={voices.length === 0}
+          >
+            {voices.map(voice => (
+              <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
+                {voice.name} ({voice.lang})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="chat-header">
         <span className="chat-title">Chat</span>

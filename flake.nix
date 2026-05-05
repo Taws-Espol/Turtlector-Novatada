@@ -18,6 +18,7 @@
         buildInputs = [
           pkgs.nodejs_20
           pkgs.portaudio
+          pkgs.ffmpeg
         ];
         shellHook = ''
           export LD_LIBRARY_PATH=${pkgs.portaudio}/lib:$LD_LIBRARY_PATH
