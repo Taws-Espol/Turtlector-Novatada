@@ -51,24 +51,27 @@ export default function Tortuga3D({
 
   const standby = useGLTF(TURTLE_MODEL_BY_STATE.standby)
   const listening = useGLTF(TURTLE_MODEL_BY_STATE.listening)
+  const thinking = useGLTF(TURTLE_MODEL_BY_STATE.thinking)
   const speaking = useGLTF(TURTLE_MODEL_BY_STATE.speaking)
 
   const sceneByState = useMemo(
     () => ({
       standby: standby.scene.clone(),
       listening: listening.scene.clone(),
+      thinking: thinking.scene.clone(),
       speaking: speaking.scene.clone(),
     }),
-    [listening.scene, speaking.scene, standby.scene],
+    [listening.scene, speaking.scene, standby.scene, thinking.scene],
   )
 
   const animationsByState = useMemo(
     () => ({
       standby: standby.animations,
       listening: listening.animations,
+      thinking: thinking.animations,
       speaking: speaking.animations,
     }),
-    [listening.animations, speaking.animations, standby.animations],
+    [listening.animations, speaking.animations, standby.animations, thinking.animations],
   )
 
   const currentScene = sceneByState[animationState]
@@ -129,7 +132,7 @@ export default function Tortuga3D({
       scale={layout.scale}
       rotation={[0, -Math.PI / 2, 0]}
       onClick={() => {
-        if (xrMode === xrModes.ar) {
+        if (xrMode === xrModes.vr) {
           onTurtleInteract?.()
         }
       }}

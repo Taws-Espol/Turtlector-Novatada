@@ -46,7 +46,15 @@ function App() {
   const isThinking = chatState.requestStatus === 'loading'
 
   const turtleAnimationState = useMemo(() => {
-    if (isListeningActive || isThinking) {
+    if (isListeningActive) {
+      return turtleAnimationStates.listening
+    }
+
+    if (isThinking && xrMode === xrModes.vr) {
+      return turtleAnimationStates.thinking
+    }
+
+    if (isThinking) {
       return turtleAnimationStates.listening
     }
 
@@ -55,7 +63,7 @@ function App() {
     }
 
     return turtleAnimationStates.standby
-  }, [isListeningActive, isSpeakingActive, isThinking])
+  }, [isListeningActive, isSpeakingActive, isThinking, xrMode])
 
   const lastAssistantMessage = useMemo(() => {
     for (let i = chatState.messages.length - 1; i >= 0; i -= 1) {
@@ -114,8 +122,8 @@ function App() {
     await toggleVoiceCapture()
   }
 
-  const handleARTurtleInteract = () => {
-    if (xrMode !== xrModes.ar) return
+  const handleVRTurtleInteract = () => {
+    if (xrMode !== xrModes.vr) return
     void toggleVoiceCapture()
   }
 
@@ -217,7 +225,7 @@ function App() {
                 onMicToggle={() => {
                   void toggleVoiceCapture()
                 }}
-                onTurtleInteract={handleARTurtleInteract}
+                onTurtleInteract={handleVRTurtleInteract}
               />
             </div>
           </aside>

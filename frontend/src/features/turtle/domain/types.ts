@@ -1,6 +1,7 @@
 export const turtleAnimationStates = {
   standby: 'standby',
   listening: 'listening',
+  thinking: 'thinking',
   speaking: 'speaking',
 } as const
 
