@@ -7,7 +7,7 @@ from app.schemas.chat import (
     ChatResponse,
 )
 from app.services.audio import get_audio_service
-from app.services.chat import get_chat_service
+from app.services.chat import get_ollama_chat_service
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @router.post("/send", response_model=ChatResponse)
 def send_message(
     request: ChatRequest,
-    chat_service=Depends(get_chat_service),
+    chat_service=Depends(get_ollama_chat_service),
     audio_service=Depends(get_audio_service),
 ):
     """

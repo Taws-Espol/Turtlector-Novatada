@@ -4,6 +4,7 @@ from typing import Any
 import uuid
 
 from app.clients.gemini import chat_client
+from app.clients.ollama import chat_client as ollama_chat_client
 from app.const.chat import system_prompt
 
 logger = logging.getLogger(__name__)
@@ -47,3 +48,7 @@ class ChatService:
 
 def get_chat_service():
     return ChatService(chat_client)
+
+
+def get_ollama_chat_service():
+    return ChatService(ollama_chat_client)
